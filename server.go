@@ -8,6 +8,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type User struct {
+	Name string `json:"name" xml:"name" form:"name" query:"name"`
+	Email string `json:"email" xml:"email" form:"email" query:"email"`
+}
+
 // e.GET("/users/:id", getUser)
 func getUser(c echo.Context) error {
 	// User ID from path `users/:id`
@@ -32,7 +37,7 @@ func save(c echo.Context) error {
 }
 
 // e.POST("/savefile", savefile)
-func savefile(c echo.Context) error {
+func saveFile(c echo.Context) error {
 	// Get name
 	name := c.FormValue("name")
 	//Get avatar
@@ -63,6 +68,20 @@ func savefile(c echo.Context) error {
 	return c.HTML(http.StatusOK, "<b>Thank you!" + name + "</b>")
 }
 
+func getUsers(c echo.Context) error {
+	u := new(User)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	return c.JSON(http.StatusCreated, u)
+	// or
+	// return c.XML(http.StatusCreated, u)
+}
+
+func helloWorld(c echo.Context) error {
+	return c.String(http.StatusOK, "Hello, World!")
+}
+
 func main() {
 	e := echo.New()
 	// e.POST("/users", saveUser)
@@ -71,6 +90,8 @@ func main() {
 	// e.DELETE("/users/:id", deleteUser)
 	e.GET("/show", show)
 	e.POST("/save", save)
-	e.POST("/savefile", savefile)
+	e.POST("/savefile", saveFile)
+	e.POST("/users", getUsers)
+	e.GET("/", helloWorld)
 	e.Logger.Fatal(e.Start(":1323"))
 }
