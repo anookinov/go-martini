@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -135,11 +136,41 @@ func main() {
 	e := echo.New()
 	e.Renderer = renderer
 
+	// e.Pre(middleware.HTTPSRedirect())
+	// HTTPSRedirect
+	// HTTPSWWWRedirect
+	// WWWRedirect
+	// NonWWWRedirect
+	// AddTrailingSlash
+	// RemoveTrailingSlash
+	// MethodOverride
+	// Rewrite
+
 	// Root level middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	// BodyLimit
+	// Logger
+	// Gzip
+	// Recover
+	// BasicAuth
+	// JWTAuth
+	// Secure
+	// CORS
+	// Static
+
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Skipper: func(c echo.Context) bool {
+		// 	if strings.HasPrefix(c.Request().Host, "localhost") {
+		// 		return true
+		// 	}
+		// 	return false
+			return strings.HasPrefix(c.Request().Host, "localhost")
+		},
+	}))
 
 	// Group level middleware
+	// g := e.Group("/admin", middleware.BasicAuth())
 	g := e.Group("/admin")
 	g.Use(middleware.BasicAuth(basicAuth))
 
