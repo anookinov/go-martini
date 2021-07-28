@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // TemplateRenderer is a custom html/template renderer for Echo framework
@@ -84,7 +85,7 @@ func saveFile(c echo.Context) error {
 	return c.HTML(http.StatusOK, "<b>Thank you!" + name + "</b>")
 }
 
-func getUsers(c echo.Context) error {
+func postUsers(c echo.Context) error {
 	u := new(User)
 	if err := c.Bind(u); err != nil {
 		return err
@@ -108,6 +109,24 @@ func uriTemplate(c echo.Context) error {
 	})
 }
 
+func basicAuth(username, password string, c echo.Context) (bool, error) {
+	if username == "joe" && password == "secret" {
+		return true, nil
+	}
+	return false, nil
+}
+
+func routeMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		println("request to /users")
+		return next(c)
+	}
+}
+
+func getUsers(c echo.Context) error {
+	return c.String(http.StatusOK, "/users")
+}
+
 func main() {
 	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("public/views/*.html")),
@@ -115,6 +134,18 @@ func main() {
 	
 	e := echo.New()
 	e.Renderer = renderer
+
+	// Root level middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// Group level middleware
+	g := e.Group("/admin")
+	g.Use(middleware.BasicAuth(basicAuth))
+
+	// Route level middleware
+	track := routeMiddleware
+
 	// e.POST("/users", saveUser)
 	e.GET("/users/:id", getUser)
 	// e.PUT("/users/:id", updateUser)
@@ -122,13 +153,14 @@ func main() {
 	e.GET("/show", show)
 	e.POST("/save", save)
 	e.POST("/savefile", saveFile)
-	e.POST("/users", getUsers)
+	e.POST("/users", postUsers)
 	e.Static("/static", "assets")
 	e.File("/", "public/index.html")
 	e.File("/favicon.ico", "images/favicon.ico")
 	e.File("/images/site.webmanifest", "images/site.webmanifest")
 	e.GET("/hello", helloWorld)
 	e.GET("/hellotemplate", helloTemplate)
+	e.GET("/users", getUsers, track)
 
 	// Named route "foobar"
 	e.GET("/uritemplate", uriTemplate).Name = "foobar"
