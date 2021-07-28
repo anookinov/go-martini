@@ -9,13 +9,21 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type Template struct {
+// TemplateRenderer is a custom html/template renderer for Echo framework
+type TemplateRenderer struct {
 	templates *template.Template
 }
 
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+// Render renders a template document
+func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	// Add global methods if data is a map
+	if 	viewContext, isMap := data.(map[string]interface{}); isMap {
+		viewContext["reverse"] = c.Echo().Reverse
+	}
+
 	return t.templates.ExecuteTemplate(w, name, data)
 }
+
 type User struct {
 	Name string `json:"name" xml:"name" form:"name" query:"name"`
 	Email string `json:"email" xml:"email" form:"email" query:"email"`
@@ -94,13 +102,19 @@ func helloTemplate(c echo.Context) error {
 	return c.Render(http.StatusOK, "hello", "World")
 }
 
+func uriTemplate(c echo.Context) error {
+	return c.Render(http.StatusOK, "template.html", map[string]interface{}{
+		"name": "Dolly!",
+	})
+}
+
 func main() {
-	t := &Template{
+	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("public/views/*.html")),
 	}
 	
 	e := echo.New()
-	e.Renderer = t
+	e.Renderer = renderer
 	// e.POST("/users", saveUser)
 	e.GET("/users/:id", getUser)
 	// e.PUT("/users/:id", updateUser)
@@ -115,5 +129,8 @@ func main() {
 	e.File("/images/site.webmanifest", "images/site.webmanifest")
 	e.GET("/hello", helloWorld)
 	e.GET("/hellotemplate", helloTemplate)
+
+	// Named route "foobar"
+	e.GET("/uritemplate", uriTemplate).Name = "foobar"
 	e.Logger.Fatal(e.Start(":1323"))
 }
