@@ -92,6 +92,10 @@ func main() {
 	e.POST("/save", save)
 	e.POST("/savefile", saveFile)
 	e.POST("/users", getUsers)
-	e.GET("/", helloWorld)
+	e.Static("/static", "assets")
+	e.File("/", "public/index.html")
+	e.File("/favicon.ico", "images/favicon.ico")
+	e.File("/images/site.webmanifest", "images/site.webmanifest")
+	e.GET("/hello", helloWorld)
 	e.Logger.Fatal(e.Start(":1323"))
 }
