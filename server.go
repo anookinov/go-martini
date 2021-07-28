@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"io"
 	"net/http"
 	"os"
@@ -8,6 +9,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Template struct {
+	templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
 type User struct {
 	Name string `json:"name" xml:"name" form:"name" query:"name"`
 	Email string `json:"email" xml:"email" form:"email" query:"email"`
@@ -82,8 +90,17 @@ func helloWorld(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, World!")
 }
 
+func helloTemplate(c echo.Context) error {
+	return c.Render(http.StatusOK, "hello", "World")
+}
+
 func main() {
+	t := &Template{
+		templates: template.Must(template.ParseGlob("public/views/*.html")),
+	}
+	
 	e := echo.New()
+	e.Renderer = t
 	// e.POST("/users", saveUser)
 	e.GET("/users/:id", getUser)
 	// e.PUT("/users/:id", updateUser)
@@ -97,5 +114,6 @@ func main() {
 	e.File("/favicon.ico", "images/favicon.ico")
 	e.File("/images/site.webmanifest", "images/site.webmanifest")
 	e.GET("/hello", helloWorld)
+	e.GET("/hellotemplate", helloTemplate)
 	e.Logger.Fatal(e.Start(":1323"))
 }
